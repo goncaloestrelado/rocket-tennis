@@ -1,4 +1,6 @@
 plugin/plugins/
 plugin/build/
 *.user
+*.exe
+*.obj
 .vs/
