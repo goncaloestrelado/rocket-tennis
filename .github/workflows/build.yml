@@ -1,0 +1,53 @@
+name: build-plugin
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Pinned: the template targets the v143 toolset (VS 2022).
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Checkout BakkesMod SDK (headers, pluginsdk.lib, bakkesmod-patch.exe)
+        uses: actions/checkout@v4
+        with:
+          repository: bakkesmodorg/BakkesModSDK
+          ref: 479e8f571cf554b25f4eeb64d611dec4133edcaf
+          path: bm/bakkesmodsdk
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Set up MSVC environment (for cl)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Bounce detector test (offline, no game)
+        shell: pwsh
+        run: |
+          cl /nologo /std:c++20 /EHsc /W4 /Iplugin tests\bounce_test.cpp /Fe:bounce_test.exe /Fo:bounce_test.obj
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\bounce_test.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build plugin (Release|x64)
+        shell: pwsh
+        run: >
+          msbuild plugin/RocketLeagueTennis.vcxproj
+          /m
+          /p:Configuration=Release
+          /p:Platform=x64
+          "/p:BakkesModPath=$env:GITHUB_WORKSPACE\bm"
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: RocketLeagueTennis-dll
+          path: plugin/plugins/RocketLeagueTennis.dll
+          if-no-files-found: error
