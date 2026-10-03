@@ -9,6 +9,10 @@ Status values: `pending` · `implemented, unverified` · `pass` · `fail`.
 | ID | Question | Needed by | How it is tested | Status | Result / notes |
 |----|----------|-----------|------------------|--------|----------------|
 | A | Does the CI-built DLL load in Rocket League through BakkesMod (`plugin load RocketLeagueTennis`) and run `onLoad`? | all phases | Push, run the `build-plugin` workflow, download the DLL artifact, copy to `%appdata%\bakkesmod\bakkesmod\plugins\`, load in freeplay. Expect `[SpikeE] loaded` in the F6 console. | pending | CI workflow not yet run (written without access to a Windows runner). |
+
+### Spike A notes
+- 2026-10-03: the first GitHub Actions run failed in the MSBuild post-build step because `bakkesmod-patch.exe` exits with `No BakkesMod installation found.` The CI job sets `BakkesModPath` to the SDK checkout (`$GITHUB_WORKSPACE\bm`), which is not a real BakkesMod install. The SDK binary exists, but the patcher refuses to run without a valid `BakkesMod.exe` install.
+- Fixed in `plugin/BakkesMod.props` by making the post-build patch step conditional on a real BakkesMod installation (`BakkesMod.exe` under `BakkesModPath`). The include/lib paths still point at the SDK checkout, so the project can compile in CI, while a local install still runs the patcher when present.
 | B | Can the plugin run on the user's custom UDK map (scaled arena + net), not just stock freeplay maps? | 2, 3 | Load the map, `plugin load`, confirm Spike E rows are written there. | pending | Needs the hand-built map. |
 | C | Can the plugin change the ball's color from code, per tick, by side? | 5 | Tiny test notifier that sets the ball color; then drive it from `side`. | pending | `[verify]` which SDK call/event applies to the ball's material. |
 | D | Does the plugin run inside a Rocket Plugin–hosted match with two players (plugin type, ball access, tick hook)? | 7 | Host via Rocket Plugin, join with a second client, check Spike E log on the host. | pending | `[verify]` `PLUGINTYPE_FREEPLAY` (current) may not be enough for hosted matches. |

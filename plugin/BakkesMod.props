@@ -4,6 +4,8 @@
   <PropertyGroup Label="UserMacros">
     <!-- CI passes /p:BakkesModPath=<dir containing bakkesmodsdk\>; locally it comes from the BakkesMod install. -->
     <BakkesModPath Condition="'$(BakkesModPath)' == ''">$(registry:HKEY_CURRENT_USER\Software\BakkesMod\AppPath@BakkesModPath)</BakkesModPath>
+    <BakkesModPatch Condition="'$(BakkesModPatch)' == '' and Exists('$(BakkesModPath)\BakkesMod.exe')">true</BakkesModPatch>
+    <BakkesModPatch Condition="'$(BakkesModPatch)' == ''">false</BakkesModPatch>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -13,7 +15,7 @@
       <AdditionalLibraryDirectories>$(BakkesModPath)\bakkesmodsdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>pluginsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
+    <PostBuildEvent Condition="'$(BakkesModPatch)' == 'true'">
       <Command> "$(BakkesModPath)\bakkesmodsdk\bakkesmod-patch.exe" "$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
